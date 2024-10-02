@@ -1,3 +1,7 @@
+////////////////////////////////
+// Seth Risner and Connor Smith
+////////////////////////////////
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -24,7 +28,7 @@ Block *freeList = (Block*)memory;
 
 // Initialize the memory manager
 void initializeMemory() {
-    freeList->size = MEMORY_SIZE - sizeof(Block);
+    freeList->size = MEMORY_SIZE - sizeof(Block);   // sizeof(Block) = 24 // 256 - 24 = 232
     freeList->free = true;
     freeList->next = NULL;
 }
@@ -41,9 +45,50 @@ void markBadBlocks(char *memory, size_t size, size_t badBlockCount) {
 // Skeleton function: Allocate memory dynamically, skipping bad blocks
 void* myMalloc(size_t size) {
     // STUDENTS: Implement logic to allocate memory dynamically, ensuring that you skip over bad blocks
-    int array[size];
-    int* intPtr = &array[0];
-    return intPtr; // Placeholder return value
+    
+/*
+    myMalloc:
+    1. create a character pointer array to copy good data from large memory
+    2. create a copy of freeList to iterate through freeList in parallel to large memory
+    3. iterate through large memory
+        - check for if the block is free
+        - check for if the block is a bad block AKA if large_memory[i] != 'X'
+        - if all are true, copy &large_memory[i] into allocated_memory[i]
+    4. Edge cases:
+        do you have enough usable memory?
+
+    myFree():
+        - if the void* is NULL, nothing needs to be freed so just return
+        - check if the current block on freeList is free. mark freeList->free = true
+        - make sure current block and next block is free, if both are free, then set the size of current block to sizeof(currentblock) += current->next->size
+        - myFree is combining blocks into one
+        - while (current != NULL && current->next != null)
+*/
+
+    // 1 & 2
+    char* allocated_memory = NULL;
+    Block* head = freeList;
+    int block_count {0}; // tracker for how many good blocks have been allocated, if block_count exceeds the size the user input, return allocated_memory
+
+    // 3
+    while (head->next != NULL) {
+        for (size_t i {0}; i < LARGE_MEMORY_SIZE; i++) {
+            if (head->free == true && large_memory[i] != BAD_BLOCK) {
+                allocated_memory = &large_memory[i];
+            }
+            if (block_count >= size) {
+                return allocated_memory;
+            }
+        
+            head = head->next;
+        }
+    }
+    
+    
+    
+
+    
+    return NULL; // Placeholder return value
 }
 
 // Skeleton function: Free the allocated memory
@@ -51,14 +96,9 @@ void myFree(void *ptr) {
     // STUDENTS: Implement logic to free the allocated memory
 }
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Usage: %s <size_of_allocation>\n", argv[0]);
-        return 1;
-    }
+int main() {
 
-    // Convert the command-line argument to an integer for allocation size
-    size_t allocationSize = atoi(argv[1]);
+    size_t allocationSize = 10;
 
     // Initialize memory management
     initializeMemory();
@@ -70,6 +110,10 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    for (size_t i {0}; i < LARGE_MEMORY_SIZE; i++) {
+        large_memory[i] = 'W';
+    }
+
     // Mark some blocks as "bad"
     markBadBlocks(large_memory, LARGE_MEMORY_SIZE, 1000); // Mark 1000 bad blocks
 
@@ -79,9 +123,9 @@ int main(int argc, char *argv[]) {
         printf("Memory allocation failed.\n");
     } else {
         // Assign values to the array and print them
-        for (int i = 0; i < allocationSize; i++) {
+        for (size_t i = 0; i < allocationSize; i++) {
             array[i] = i * i;  // Assign square of index
-            printf("Array[%d] = %d\n", i, array[i]);
+            printf("Array[%llu] = %d\n", i, array[i]);
         }
 
         // Free the allocated memory
@@ -91,6 +135,10 @@ int main(int argc, char *argv[]) {
 
     // Clean up large memory block using system's free function
     myFree(large_memory);
+
+    // REMEBER TO REMOVE THIS AFTER myFree() HAS BEEN COMPLETED
+    delete[] array;
+    free(large_memory);
 
     return 0;
 }
