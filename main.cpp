@@ -65,24 +65,77 @@ void* myMalloc(size_t size) {
         - while (current != NULL && current->next != null)
 */
 
-    // 1 & 2
-    char* allocated_memory = NULL;
+    // We must return null if we don't have enough memory to allocate
+    if (size > LARGE_MEMORY_SIZE) {
+        return NULL;
+    }
+    
     Block* head = freeList;
-    int block_count {0}; // tracker for how many good blocks have been allocated, if block_count exceeds the size the user input, return allocated_memory
+    Block* previous;
+    size_t address_count {0};    // Keep track of how many good contigous memory addresses we have found
+    bool is_bad {false};         // flag to indicate if the data is bad
 
-    // 3
-    while (head->next != NULL) {
-        for (size_t i {0}; i < LARGE_MEMORY_SIZE; i++) {
-            if (head->free == true && large_memory[i] != BAD_BLOCK) {
-                allocated_memory = &large_memory[i];
-            }
-            if (block_count >= size) {
-                return allocated_memory;
-            }
-        
-            head = head->next;
+    // Divide the memory into blocks of size 256
+    for (size_t i {0}; i < LARGE_MEMORY_SIZE; i++, address_count++) {
+        // If we find bad data, then we will set the block's free member to false later
+        if (large_memory[i] == BAD_BLOCK) {
+            is_bad = true;
+        }
+        if (address_count == MEMORY_SIZE) {
+            Block memory_block {MEMORY_SIZE, is_bad, NULL}; // Create a new block of size MEMORY_SIZE, mark if it is free or not depending on if we found a BAD_BLOCK, and initialize its next pointer to NULL
+            previous->next = &memory_block;
+            previous = &memory_block;
         }
     }
+
+   
+
+    char* start = &large_memory[0]; // Store the address of the first element of large memory
+                                    // We will use this variable to store the starting address of a contigouous block of memory
+    
+
+    // Iterate through the large memory
+    for (size_t i {0}; i < LARGE_MEMORY_SIZE; i++) {
+        // If we find a bad block, we skip it and reset the starting pointer
+        if (large_memory[i] == BAD_BLOCK) {
+            start = &large_memory[i+1];
+            address_count = 0;
+            // printf("BAD BLOCK FOUND\n");
+        }
+        // If we still have not found the right number of memory addresses, increment the counter and continue searching
+        else if (address_count != size) {
+            address_count++;
+        }
+        // Otherwise, we have found the correct number of addresses, and we can return the pointer to the beginning of the continuous memory
+        else {
+            printf("Returning address %p\n", start);
+            return start;
+        }
+    }
+
+
+
+
+
+    // 1 & 2
+    // char** allocated_memory = new char*[size];
+    // Block* head = freeList;
+    // // int block_count {0}; // tracker for how many good blocks have been allocated, if block_count exceeds the size the user input, return allocated_memory
+
+    // // 3
+    // // while (head->next != NULL) {
+        
+    // // }
+    //         //     if (block_count >= size) {
+    //         //     return allocated_memory;
+    //         // }
+
+
+    // for (size_t i = 0; i < LARGE_MEMORY_SIZE; i++) {
+    //     if (large_memory[i] != BAD_BLOCK) {
+    //         allocated_memory[i] = &large_memory[i];
+    //     }
+    // }
     
     
     
@@ -110,28 +163,26 @@ int main() {
         return 1;
     }
 
-    for (size_t i {0}; i < LARGE_MEMORY_SIZE; i++) {
-        large_memory[i] = 'W';
-    }
-
     // Mark some blocks as "bad"
     markBadBlocks(large_memory, LARGE_MEMORY_SIZE, 1000); // Mark 1000 bad blocks
 
     // Simulate memory allocation
     int *array = (int*)myMalloc(allocationSize * sizeof(int));  // Allocate memory for an array of integers
+    printf("Address of array: %p\n", array);
     if (array == NULL) {
         printf("Memory allocation failed.\n");
     } else {
         // Assign values to the array and print them
         for (size_t i = 0; i < allocationSize; i++) {
             array[i] = i * i;  // Assign square of index
-            printf("Array[%llu] = %d\n", i, array[i]);
+            printf("Array[%llu] = %d\t\t%p\n", i, array[i], &array[i]);
         }
 
         // Free the allocated memory
         myFree(array);
         printf("Memory successfully freed.\n");
     }
+
 
     // Clean up large memory block using system's free function
     myFree(large_memory);
