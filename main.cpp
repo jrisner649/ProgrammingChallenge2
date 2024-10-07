@@ -102,9 +102,9 @@ void* myMalloc(size_t size) {
                     freeList->next = allocated_block;
                     allocated_block->next = temp;
 
-                    char* memory_ptr = &memory[freeList->size + 2*sizeof(Block)];
-                    return memory_ptr;
-                }
+                    char* memory_ptr = &memory[freeList->size + 2*sizeof(Block)];   // return the pointer to the beginning of the data we just allocated
+                    return memory_ptr;                                              // 2*sizeof(Block) comes from the fact that we have to pass over the freeList Block and the allocated Block we just created
+                }                                                                   // freeList->size because we have to pass over the data that the freeList Block is managing
             }
     }
 
@@ -248,6 +248,8 @@ int main(int argc, char *argv[]) {
         myFree(array);
         printf("Memory successfully freed.\n");
     }
+
+    runTests();
 
     // Clean up large memory block using system's free function
     myFree(large_memory);
